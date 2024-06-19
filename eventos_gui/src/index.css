@@ -1,0 +1,193 @@
+:root{
+
+    --success-color: #4ea965;
+    --danger-color: #f14c4c;
+    --warning-color: #d7ba7d;
+
+    --border-color: #2b2b2b;
+    --default-bg-color: #1f1f1f;
+    --dark-bg-color: #181818;
+    
+
+}
+
+/* Default Behavior */
+
+body{margin: 0; font-family: "Tiny5", sans-serif; background-color: var(--default-bg-color); color: #fff;}
+
+h1{text-transform: uppercase; font-size: 3rem;}
+h3{font-size: 2rem;}
+h5{font-size: 1.25rem;}
+
+a{text-decoration: none; color: inherit;}
+
+img,
+svg{max-width: 100%; vertical-align: bottom;}
+
+input[type="text"], textarea{padding: 10px; border: 1px solid var(--border-color); resize: none; font-size: 1.2rem;}
+input[type="text"]::-webkit-input-placeholder, textarea::-webkit-input-placeholder{text-transform: uppercase;}
+textarea{height: 200px;}
+
+*{box-sizing: border-box; margin: 0; border: 0; background-color: initial; color: #fff; font-family: inherit; font-size: inherit;}
+
+/* Helper Classes */
+
+.content{width: 1200px; max-width: 90vw; margin: auto;}
+
+.row, .grid, .column{display: flex; gap: inherit;}
+.column{flex-direction: column;}
+.grid{display: grid;}
+
+.btn{padding: 10px 20px; cursor: pointer; color: #fff; font-family: inherit;}
+.btn.danger{background-color: var(--danger-color);}
+.btn.success{background-color: var(--success-color);}
+
+/* App */
+
+div#app{
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Calendar */
+
+main#calendar{
+    grid-template-areas:
+        "header header"
+        "month list";
+    user-select: none;
+    height: 80vh;
+    grid-template-rows: min-content minmax(0, 1fr);
+}
+
+main#calendar > *{
+    border: 1px solid var(--border-color);
+}
+
+main#calendar button{
+    cursor: pointer;
+}
+
+main#calendar header#calendarHeader{
+    grid-area: header;
+    padding: 20px;
+    background-color: var(--dark-bg-color);
+    justify-content: space-between;
+    align-items: center;
+}
+
+main#calendar header#calendarHeader button{
+    font-size: 50px;
+    padding: 0;
+}
+
+main#calendar header#calendarHeader .column{
+    align-items: center;
+}
+
+main#calendar section#days{
+    grid-area: month;
+    padding: 20px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    font-size: 1.2rem;
+    gap: 10px;
+    grid-auto-rows: min-content;
+    align-content: center;
+}
+
+main#calendar section#days > *{
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+main#calendar section#days p:first-child{
+    color: var(--danger-color);
+}
+
+main#calendar section#days button.today{
+    outline: 2px solid var(--warning-color);
+    outline-offset: -1px;
+}
+
+main#calendar section#days button.selected{
+    background-color: var(--warning-color);
+}
+
+main#calendar section#eventList{
+    grid-area: list;
+    background-color: var(--dark-bg-color);
+    width: 400px;
+}
+
+main#calendar section#eventList ul > p{
+    margin: auto;
+    font-size: 2rem;
+    text-align: center;
+}
+
+main#calendar section#eventList ul{
+    padding: 20px;
+    margin: 0;
+    list-style: none;
+    gap: 10px;
+    flex: 1 0 auto;
+}
+
+section#eventList article {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    gap: 5px;
+}
+
+section#eventList article header {
+    gap: 0;
+}
+
+section#eventList article header h5 {
+    flex: 1 0 auto;
+}
+
+section#eventList article header button.success{
+    color: var(--success-color);
+}
+
+section#eventList article header button.danger{
+    color: var(--danger-color);
+}
+
+main#calendar section#eventList > button.success{
+    padding: 20px;
+    background-color: var(--success-color);
+    font-size: 1.3rem;
+}
+
+main#calendar section#overlay{
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0 0 0 / 70%);
+    backdrop-filter: blur(5px);
+}
+
+main#calendar section#overlay[hidden]{
+    display: none;
+}
+
+main#calendar section#overlay form{
+    width: 40vw;
+    background-color: #181818;
+    gap: 10px;
+    padding: 20px;
+}
+
+main#calendar section#overlay form .actions{
+    justify-content: end;
+}
