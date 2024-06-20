@@ -1,196 +1,247 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import eventoDataService from '../services/eventoDataService';
 
 const Calendar = () => {
 
-    // Calendar Stuff
-    const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
-    const monthDays = [];
+	// Calendar Stuff
+	const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']; // Lista de dias da semana
+	const monthDays = []; // Lista de dias do mês
 
-    const [date, setDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState(date);
+	const [date, setDate] = useState(new Date()); // Controle do mês selecionado
+	const [selectedDate, setSelectedDate] = useState(date); // Controle do dia selecionado
 
-    const getDay = (day) => new Date(date.getFullYear(), date.getMonth(), day);
+	const getDay = (day) => new Date(date.getFullYear(), date.getMonth(), day); // Função que retorna a data do dia selecionado
+		
+	const [everyEventInMonth, setEveryEventInMonth] = useState([]); // Lista de dias que contém um evento
+	const resetMonthlyEvents = useCallback(() => eventoDataService.getAllInMonth(date.getFullYear(), date.getMonth() + 1).then(response => {
+				
+		const newEveryEventInMonth = [];
+		for(let event of response.data) if(!newEveryEventInMonth.includes(parseInt(event.data.substring(8)))) newEveryEventInMonth.push(parseInt(event.data.substring(8)));
+		setEveryEventInMonth(newEveryEventInMonth);
 
-    const numDays = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const startingWeekDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 1;
+	}).catch((response) => {
 
-    for(let i = 1; i <= numDays; i++) monthDays.push(<button onClick={() => setSelectedDate(getDay(i))} key={`day-${i}`} style={i === 1 ? {gridColumn: startingWeekDay} : {}} className={`${getDay(i).setHours(0, 0, 0, 0) === (new Date()).setHours(0, 0, 0, 0) ? 'today' : ''} ${getDay(i).setHours(0, 0, 0, 0) === selectedDate.setHours(0, 0, 0, 0) ? 'selected' : ''}`}>{i}</button>);
+		console.error(response);
+		alert('Erro ao buscar eventos do mês.');
 
-    const prevMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1));
-    const nextMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1));
+	}), [date]);
 
-    // Event Stuff
-    const [showForm, setShowForm] = useState(false);
-    const [toEdit, setToEdit] = useState(null);
-    const [newEventTitle, setNewEventTitle] = useState('');
-    const [newEventDescription, setNewEventDescription] = useState('');
-    const [events, setEvents] = useState([]);
+	useEffect(() => {
 
-    const getEventAtSelectedDate = () => eventoDataService.getAllAt(selectedDate).then(response => {
-            
-        setEvents(response.data);
-    
-    }).catch(() => {
+		resetMonthlyEvents();
 
-        alert('Erro ao buscar eventos.');
+	}, [resetMonthlyEvents]);
 
-    });
+	const numDays = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate(); // Quantidade de dias no mês selecionado
+	const startingWeekDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 1; // Em que dia da semana começa o mês
+	for(let i = 1; i <= numDays; i++){ // Gerando botões do calendário
 
-    useEffect(() => {
+		const buttonDate = getDay(i);
+		monthDays.push(
+			<button
+				key={`day-${i}`}
+				onClick={() => setSelectedDate(buttonDate)}
+				style={i === 1 ? {gridColumn: startingWeekDay} : {}}
+				className={`
+					${buttonDate.setHours(0, 0, 0, 0) === (new Date()).setHours(0, 0, 0, 0) ? 'today' : ''}
+					${buttonDate.setHours(0, 0, 0, 0) === selectedDate.setHours(0, 0, 0, 0) ? 'selected' : ''}
+					${everyEventInMonth.includes(buttonDate.getDate()) ? 'hasEvent' : ''}
+				`}
+			>
+					{i}
+			</button>			
+		);
 
-        getEventAtSelectedDate();
+	}
 
-    }, [selectedDate, showForm])
+	const prevMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1)); // Próximo mês
+	const nextMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1)); // Mês anterior
 
-    const hideForm = e => {
-        e.preventDefault();
-        setShowForm(false);
-    }
+	// Event Stuff
+	const [showForm, setShowForm] = useState(false); // Flag que controla a visibilidade do formulário de evento
+	const [toEdit, setToEdit] = useState(null); // Flag que controla o evento que está sendo editado
+	const [newEventTitle, setNewEventTitle] = useState(''); // Título do evento que está sendo editado ou adicionado
+	const [newEventDescription, setNewEventDescription] = useState(''); // Descrição do evento que está sendo editado ou adicionado
+	const [events, setEvents] = useState([]); // Listagem de eventos na lateral do calendário
 
-    const deleteEvent = (e, id) => {
+	// Atualizar a listagem de eventos do dia
+	const resetDailyEvents = useCallback(() => eventoDataService.getAllAt(selectedDate).then(response => {
+				
+		setEvents(response.data);
+	
+	}).catch(() => {
 
-        e.preventDefault();
-        if(window.confirm("Deseja mesmo deletar esse evento?")){
+		alert('Erro ao buscar eventos do dia.');
 
-            eventoDataService.delete(id).then(() => {
-                
-                alert("Evento deletado com sucesso.");
-                getEventAtSelectedDate();
-            
-            }).catch(() => {
+	}), [selectedDate]);
 
-                alert("Algo deu errado ao deletar o evento.");
+	useEffect(() => {
 
-            });
-        
-        }
+		resetDailyEvents();
 
-    }
+	}, [selectedDate, showForm, resetDailyEvents])
 
-    const eventPostSuccessfulResponse = () => {
+	// Esconder o formulário e resetar variáveis
+	const hideForm = e => {
+		e.preventDefault();
+		setNewEventTitle("");
+		setNewEventDescription("");
+		setShowForm(false);
+		setToEdit(null);
+	}
 
-        alert(`Evento ${toEdit ? 'atualizado' : 'criado'} com sucesso!`);
-        setNewEventTitle("");
-        setNewEventDescription("");
-        setShowForm(false);
-        setToEdit(null);
+	// Deleção de um evento
+	const deleteEvent = (e, id) => {
 
-    }
+		e.preventDefault();
+		if(window.confirm("Deseja mesmo deletar esse evento?")){
 
-    const eventPostFailedResponse = () => {
+			eventoDataService.delete(id).then(() => {
+				
+				alert("Evento deletado com sucesso.");
+				resetDailyEvents();
+				resetMonthlyEvents();
 
-        alert(`Algo deu errado ao ${toEdit ? 'atualizar' : 'criar'} o evento.`);
+			}).catch(() => {
 
-    }
+				alert("Algo deu errado ao deletar o evento.");
 
-    const createEvent = () => {
+			});
+		
+		}
 
-        eventoDataService.create({
-            titulo: newEventTitle,
-            descricao: newEventDescription,
-            data: selectedDate
-        })
-        .then(eventPostSuccessfulResponse)
-        .catch(eventPostFailedResponse);
+	}
 
-    }
+	// Resposta de sucesso p/ atualizar ou criar um evento
+	const eventPostSuccessfulResponse = () => {
 
-    const updateEvent = () => {
+		alert(`Evento ${toEdit ? 'atualizado' : 'criado'} com sucesso!`);
+		setNewEventTitle("");
+		setNewEventDescription("");
+		setShowForm(false);
+		setToEdit(null);
+		resetMonthlyEvents();
 
-        eventoDataService.update(toEdit, {
-            titulo: newEventTitle,
-            descricao: newEventDescription,
-            data: selectedDate
-        })
-        .then(eventPostSuccessfulResponse)
-        .catch(eventPostFailedResponse);
+	}
 
-    }
+	// Resposta de falha p/ atualizar ou criar um evento
+	const eventPostFailedResponse = () => {
 
-    const postEvent = (e) => {
+		alert(`Algo deu errado ao ${toEdit ? 'atualizar' : 'criar'} o evento.`);
 
-        e.preventDefault();
-        toEdit ? updateEvent() : createEvent();
+	}
 
-    }
+	// Função de criação de evento
+	const createEvent = () => {
 
-    const prepareFormForUpdate = (data) => {
+		eventoDataService.create({
+			titulo: newEventTitle,
+			descricao: newEventDescription,
+			data: selectedDate
+		})
+		.then(eventPostSuccessfulResponse)
+		.catch(eventPostFailedResponse);
 
-        setNewEventDescription(data.descricao);
-        setNewEventTitle(data.titulo);
-        setToEdit(data.id);
-        setShowForm(true);
+	}
 
-    }
+	// Função de atualização de evento
+	const updateEvent = () => {
 
-    return (
+		eventoDataService.update(toEdit, {
+			titulo: newEventTitle,
+			descricao: newEventDescription,
+			data: selectedDate
+		})
+		.then(eventPostSuccessfulResponse)
+		.catch(eventPostFailedResponse);
 
-        <main id="calendar" className="grid">
-        
-            <header id="calendarHeader" className="row">
+	}
 
-                <button onClick={prevMonth} className="material-symbols-outlined">chevron_left</button>
-                <div className="column">
+	// Função de envio do formulário de atualização ou criação de um evento
+	const postEvent = (e) => {
 
-                    <h2>{date.getFullYear()}</h2>
-                    <h1>{date.toLocaleString('pt-br', {month: 'long'})}</h1>
+		e.preventDefault();
+		toEdit ? updateEvent() : createEvent();
 
-                </div>
-                <button onClick={nextMonth} className="material-symbols-outlined">chevron_right</button>
+	}
 
-            </header>
-            <section className="grid" id="days">
+	// Função que prepara o formulário para edição de um evento
+	const prepareFormForUpdate = (data) => {
 
-                {weekDays.map(val => <p key={val}>{val}</p>)}
-                {monthDays.map(val => val)}
+		setNewEventDescription(data.descricao);
+		setNewEventTitle(data.titulo);
+		setToEdit(data.id);
+		setShowForm(true);
 
-            </section>
-            <section className="column" id="eventList">
+	}
 
-                <ul className="column">
+	return (
 
-                    {events ? events.map(val => (
-                        <article key={`event-${val.id}`} className="column">
+		<main id="calendar" className="grid">
+		
+			<header id="calendarHeader" className="row">
 
-                            <header className="row">
+				<button onClick={prevMonth} className="material-symbols-outlined">chevron_left</button>
+				<div className="column">
 
-                                <h5>{val.titulo}</h5>
-                                <button onClick={() => prepareFormForUpdate(val)} className="material-symbols-outlined success">edit</button>
-                                <button onClick={e => deleteEvent(e, val.id)} className="material-symbols-outlined danger">delete</button>
+					<h2>{date.getFullYear()}</h2>
+					<h1>{date.toLocaleString('pt-br', {month: 'long'})}</h1>
 
-                            </header>
-                            <p>{val.descricao}</p>
+				</div>
+				<button onClick={nextMonth} className="material-symbols-outlined">chevron_right</button>
 
-                        </article>
-                    )) : (
-                        <p>Nenhum evento cadastrado</p>
-                    )}
+			</header>
+			<section className="grid" id="days">
 
-                </ul>
-                <button onClick={() => setShowForm(true)} className="btn success">Criar Evento</button>
+				{weekDays.map(val => <p key={val}>{val}</p>)}
+				{monthDays.map(val => val)}
 
-            </section>
-            <section id="overlay" className='column' hidden={!showForm}>
+			</section>
+			<section className="column" id="eventList">
 
-                <form onSubmit={e => postEvent(e)} className="column">
+				<ul className="column">
 
-                    <input type="text" placeholder="Título do evento" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)}/>
-                    <textarea placeholder="Descrição do evento" value={newEventDescription} onChange={e => setNewEventDescription(e.target.value)}></textarea>
-                    <div className="actions row">
+					{events ? events.map(val => (
+						<article key={`event-${val.id}`} className="column">
 
-                        <button className="btn danger" onClick={e => hideForm(e)}>Cancelar</button>
-                        <button className="btn success">Cadastrar</button>
+							<header className="row">
 
-                    </div>
+								<h5>{val.titulo}</h5>
+								<button onClick={() => prepareFormForUpdate(val)} className="material-symbols-outlined success">edit</button>
+								<button onClick={e => deleteEvent(e, val.id)} className="material-symbols-outlined danger">delete</button>
 
-                </form>
+							</header>
+							<p>{val.descricao}</p>
 
-            </section>
+						</article>
+					)) : (
+						<p>Nenhum evento cadastrado</p>
+					)}
 
-        </main>
+				</ul>
+				<button onClick={() => setShowForm(true)} className="btn success">Criar Evento</button>
 
-    )
+			</section>
+			<section id="overlay" className='column' hidden={!showForm}>
+
+				<form onSubmit={e => postEvent(e)} className="column">
+
+					<input type="text" placeholder="Título do evento" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)}/>
+					<textarea placeholder="Descrição do evento" value={newEventDescription} onChange={e => setNewEventDescription(e.target.value)}></textarea>
+					<div className="actions row">
+
+						<button className="btn danger" onClick={e => hideForm(e)}>Cancelar</button>
+						<button className="btn success">Cadastrar</button>
+
+					</div>
+
+				</form>
+
+			</section>
+
+		</main>
+
+	)
 
 }
 

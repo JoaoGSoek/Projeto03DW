@@ -94,6 +94,24 @@ public class EventoController {
     }
 
     /*
+     * GET /api/eventos/in/:year/:month : listar Evento dado uma data
+     */
+    @GetMapping("/eventos/in/{year}/{month}")
+    public ResponseEntity<List<Evento>> getEventoByYearAndMonth(@PathVariable("year") int year, @PathVariable("month") int month)
+    {
+        try
+        {
+            List<Evento> la = new ArrayList<Evento>();
+            rep.findByYearAndMonth(year, month).forEach(la::add);
+            if (la.isEmpty()) return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(la, HttpStatus.OK);
+        }
+         catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /*
      * GET /api/eventos/:id : listar Evento dado uma data
      */
     @GetMapping("/eventos/{id}")

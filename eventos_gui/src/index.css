@@ -108,13 +108,31 @@ main#calendar section#days p:first-child{
     color: var(--danger-color);
 }
 
-main#calendar section#days button.today{
+main#calendar section#days button.hasEvent{
+	position: relative;
+}
+
+main#calendar section#days button.hasEvent:not(.selected):before{
+	content: '';
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	left: 4px;
+	bottom: 4px;
     outline: 2px solid var(--warning-color);
+}
+
+main#calendar section#days button.today{
+    outline: 2px solid var(--success-color);
     outline-offset: -1px;
 }
 
 main#calendar section#days button.selected{
     background-color: var(--warning-color);
+}
+
+main#calendar section#days button.selected.today{
+    background-color: var(--success-color);
 }
 
 main#calendar section#eventList{
@@ -163,6 +181,10 @@ main#calendar section#eventList > button.success{
     padding: 20px;
     background-color: var(--success-color);
     font-size: 1.3rem;
+}
+
+section#eventList article p {
+	overflow-wrap: anywhere;
 }
 
 main#calendar section#overlay{
